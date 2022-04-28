@@ -1,6 +1,8 @@
 package go_webs
 
-import "strings"
+import (
+	"strings"
+)
 
 type node struct {
 	pattern  string  // 全路由
@@ -9,7 +11,7 @@ type node struct {
 	isWild   bool    // 是否精确匹配
 }
 
-// 第一个匹配成功的节点，用于插入
+// 匹配节点
 func (n *node) matchChild(part string) *node {
 	for _, child := range n.children {
 		if child.part == part && child.isWild {
@@ -30,8 +32,10 @@ func (n *node) matchChildren(part string) []*node {
 	return nodes
 }
 
+// 添加前缀树
 func (n *node) insert(pattern string, parts []string, height int) {
 	if len(parts) == height {
+		// 最后节点存储全路径
 		n.pattern = pattern
 		return
 	}
@@ -39,6 +43,7 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	part := parts[height]
 	child := n.matchChild(part)
 	if child == nil {
+		// 无匹配节点，创建
 		child = &node{
 			part:   part,
 			isWild: part[0] == ':' || part[0] == '*',
@@ -48,6 +53,7 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	child.insert(pattern, parts, height+1)
 }
 
+// 递归查找路由
 func (n *node) search(parts []string, height int) *node {
 	if len(parts) == height || strings.HasPrefix(n.part, "*") {
 		if n.pattern == "" {
