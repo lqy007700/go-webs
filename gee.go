@@ -1,20 +1,58 @@
 package go_webs
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 type HandleFunc func(c *Context)
 
 type Engine struct {
+	*RouterGroup
 	router *router
+	groups []*RouterGroup
+}
+
+type RouterGroup struct {
+	prefix      string
+	middlewares []HandleFunc // 中间件
+	parent      *RouterGroup
+	engine      *Engine
 }
 
 func New() *Engine {
-	return &Engine{
-		router: newRouter(),
+	engine := &Engine{router: newRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+func (g *RouterGroup) Group(prefix string) *RouterGroup {
+	engine := g.engine
+	group := &RouterGroup{
+		prefix: g.prefix + prefix,
+		parent: g,
+		engine: engine,
 	}
+	engine.groups = append(engine.groups, group)
+	return group
+}
+
+func (g *RouterGroup) addRouter(method string, comp string, handler HandleFunc) {
+	pattern := g.prefix + comp
+	log.Printf("Route %s - %s", method, pattern)
+	g.engine.router.addRouter(method, pattern, handler)
+}
+func (g *RouterGroup) GET(pattern string, handler HandleFunc) {
+	g.addRouter("GET", pattern, handler)
+}
+
+func (g *RouterGroup) POST(pattern string, handler HandleFunc) {
+	g.addRouter("POST", pattern, handler)
 }
 
 func (e *Engine) addRouter(method string, pattern string, handle HandleFunc) {
+	log.Printf("Route %s - %s", method, pattern)
 	e.router.addRouter(method, pattern, handle)
 }
 
