@@ -20,14 +20,27 @@ type Context struct {
 
 	// 响应数据
 	StatusCode int
+
+	// 中间件
+	handlers []HandleFunc
+	index   int
 }
 
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Write:  w,
 		Req:    r,
 		Path:   r.URL.Path,
 		Method: r.Method,
+		index:  -1,
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 

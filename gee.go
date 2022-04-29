@@ -3,6 +3,7 @@ package go_webs
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 type HandleFunc func(c *Context)
@@ -51,6 +52,10 @@ func (g *RouterGroup) POST(pattern string, handler HandleFunc) {
 	g.addRouter("POST", pattern, handler)
 }
 
+func (g *RouterGroup) Use(middleware ...HandleFunc) {
+	g.middlewares = append(g.middlewares, middleware...)
+}
+
 func (e *Engine) addRouter(method string, pattern string, handle HandleFunc) {
 	log.Printf("Route %s - %s", method, pattern)
 	e.router.addRouter(method, pattern, handle)
@@ -69,6 +74,16 @@ func (e *Engine) Run(addr string) error {
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := NewContext(w, r)
+	var middleware []HandleFunc
+
+	// 路由组中间件
+	for _, group := range e.groups {
+		if strings.HasPrefix(r.URL.Path, group.prefix) {
+			middleware = append(middleware, e.middlewares...)
+		}
+	}
+
+	c := newContext(w, r)
+	c.handlers = middleware
 	e.router.handler(c)
 }
