@@ -79,10 +79,9 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 路由组中间件
 	for _, group := range e.groups {
 		if strings.HasPrefix(r.URL.Path, group.prefix) {
-			middleware = append(middleware, e.middlewares...)
+			middleware = append(middleware, group.middlewares...)
 		}
 	}
-
 	c := newContext(w, r)
 	c.handlers = middleware
 	e.router.handler(c)

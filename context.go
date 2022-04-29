@@ -23,7 +23,7 @@ type Context struct {
 
 	// 中间件
 	handlers []HandleFunc
-	index   int
+	index    int
 }
 
 func newContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -88,4 +88,10 @@ func (c *Context) Data(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Write.Write([]byte(html))
+}
+
+func (c *Context) Fail(code int, msg string) {
+	c.SetHeader("Content-Type", "text/plain")
+	c.Status(code)
+	c.Write.Write([]byte(msg))
 }
